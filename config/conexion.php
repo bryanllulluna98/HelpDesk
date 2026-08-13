@@ -5,12 +5,11 @@
 
         protected function conexion(){
             try {
-                $conexion = new PDO("mysql:host=localhost;dbname=helpdesk_tecnostar", "root", "");
-                $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $conexion->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                $conexion = $this->dbh = new PDO("mysql:host=localhost;dbname=helpdesk_tecnostar", "root", "");
                 return $conexion;
-            } catch (PDOException $e) {
-                die("Error de conexión: " . $e->getMessage());
+            } catch (Exception $e) {
+                print "¡Error!: " . $e->getMessage() . "<br/>";
+                die();
             }
         }
 

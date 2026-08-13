@@ -6,25 +6,31 @@ class Usuarios extends Conectar{
     public function login(){
         $conectar = parent::conexion();
         parent::set_names();
-        if(isset($_POST["enviar"])){
+        #envio de datos por metodo post
+		if(isset($_POST["enviar"])){
             $correo = $_POST["correo"];
             $password = $_POST["password"];
+
+			# Validar que el correo y la contraseña no estén vacíos	
             if(empty($correo) and empty($password)){
                 header("Location:".Conectar::ruta()."index.php?m=2");
                 exit();
+
             }else{
+				#realizamos una consulta a la base de datos para verificar si el usuario existe y está activo
                 $sql = "SELECT * FROM usuarios WHERE correo=? and password=? and estado='1'";
                 $stmt = $conectar->prepare($sql);
                 $stmt->bindValue(1, $correo);
                 $stmt->bindValue(2, $password);
                 $stmt->execute();
                 $resultado = $stmt->fetch();
+
+				# Si el usuario existe y está activo
                 if(is_array($resultado) and count($resultado)>0){
                     $_SESSION["id_usuario"] = $resultado["id_usuario"];
-                    $_SESSION["nombre"] = $resultado["nombre"];
+                    $_SESSION["nombre"] = $resultado["nombre"];	
                     $_SESSION["apellido"] = $resultado["apellido"];
-                    $_SESSION["rol"] = $resultado["rol"];
-                    header("Location:".Conectar::ruta()."view/Home/");
+                    header("Location:".Conectar::ruta()."view/home/home.php");
                     exit();
                 }else{
                     header("Location:".Conectar::ruta()."index.php?m=1");
@@ -33,12 +39,7 @@ class Usuarios extends Conectar{
             }
         }
     }
-	public function __construct(PDO $conexion)
-	{
-		$this->conexion = $conexion;
-		$this->conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		$this->conexion->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-	}
+	
 
 	public function listar(): array
 	{
