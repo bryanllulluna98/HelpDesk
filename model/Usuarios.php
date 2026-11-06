@@ -1,150 +1,152 @@
 <?php
+declare(strict_types=1);
 
-class Usuarios extends Conectar{
-	private PDO $conexion;
+require_once(__DIR__ . "/../config/conexion.php");
 
-    public function login(){
-        $conectar = parent::conexion();
-        parent::set_names();
-        #envio de datos por metodo post
-		if(isset($_POST["enviar"])){
-            $correo = $_POST["correo"];
-            $password = $_POST["password"];
+class Usuarios extends Conectar {
+    private PDO $conexion;
 
-			# Validar que el correo y la contraseña no estén vacíos	
-            if(empty($correo) and empty($password)){
-                header("Location:".Conectar::ruta()."index.php?m=2");
-                exit();
-
-            }else{
-				#realizamos una consulta a la base de datos para verificar si el usuario existe y está activo
-                $sql = "SELECT * FROM usuarios WHERE correo=? and password=? and estado='1'";
-                $stmt = $conectar->prepare($sql);
-                $stmt->bindValue(1, $correo);
-                $stmt->bindValue(2, $password);
-                $stmt->execute();
-                $resultado = $stmt->fetch();
-
-				# Si el usuario existe y está activo
-                if(is_array($resultado) and count($resultado)>0){
-                    $_SESSION["id_usuario"] = $resultado["id_usuario"];
-                    $_SESSION["nombre"] = $resultado["nombre"];	
-                    $_SESSION["apellido"] = $resultado["apellido"];
-                    header("Location:".Conectar::ruta()."view/home/home.php");
-                    exit();
-                }else{
-                    header("Location:".Conectar::ruta()."index.php?m=1");
-                    exit();
-                }
-            }
-        }
+    public function __construct() {
+        $this->conexion = parent::conexion();
     }
-	
 
-	public function listar(): array
-	{
-		$consulta = $this->conexion->query(
-			'SELECT id_usuario, nombre, apellido, correo, rol, estado
-			 FROM usuarios ORDER BY id_usuario DESC'
-		);
+    /**
+     * Autentica un usuario mediante correo y contraseña.
+     * Soporta password_verify y migración automática transparente si la contraseña estaba en texto plano.
+     */
+    public function autenticar(string $correo, string $password): ?array {
+        $usuario = $this->obtenerPorCorreo($correo);
 
-		return $consulta->fetchAll();
-	}
+        // Si no existe o está inactivo (estado != 1)
+        if ($usuario === null || (int)$usuario['estado'] !== 1) {
+            return null;
+        }
 
-	public function obtenerPorId(int $id): ?array
-	{
-		$consulta = $this->conexion->prepare(
-			'SELECT id_usuario, nombre, apellido, correo, rol, estado
-			 FROM usuarios WHERE id_usuario = :id LIMIT 1'
-		);
-		$consulta->execute(['id' => $id]);
-		$usuario = $consulta->fetch();
+        // Verificación con hash seguro (bcrypt / ARGON2)
+        if (password_verify($password, $usuario['password'])) {
+            return $usuario;
+        }
 
-		return $usuario ?: null;
-	}
+        // Compatibilidad de migración: Si en BD la clave estaba en texto plano (no tiene formato de hash)
+        $esHash = str_starts_with($usuario['password'], '$2y$') 
+               || str_starts_with($usuario['password'], '$2a$') 
+               || str_starts_with($usuario['password'], '$argon2');
 
-	public function obtenerPorCorreo(string $correo): ?array
-	{
-		$consulta = $this->conexion->prepare(
-			'SELECT * FROM usuarios WHERE correo = :correo LIMIT 1'
-		);
-		$consulta->execute(['correo' => $correo]);
-		$usuario = $consulta->fetch();
+        if (!$esHash && $password === $usuario['password']) {
+            $this->actualizar((int)$usuario['id_usuario'], ['password' => $password]);
+            return $usuario;
+        }
 
-		return $usuario ?: null;
-	}
+        return null;
+    }
 
-	public function autenticar(string $correo, string $password): ?array
-	{
-		$usuario = $this->obtenerPorCorreo($correo);
+    /**
+     * Lista todos los usuarios ordenados por ID descendente.
+     */
+    public function listar(): array {
+        $consulta = $this->conexion->query(
+            'SELECT id_usuario, nombre, apellido, correo, rol, estado, fecha_creacion
+             FROM usuarios ORDER BY id_usuario DESC'
+        );
 
-		if ($usuario === null || (isset($usuario['estado']) && !$usuario['estado'])) {
-			return null;
-		}
+        return $consulta->fetchAll();
+    }
 
-		return password_verify($password, $usuario['password']) ? $usuario : null;
-	}
+    /**
+     * Obtiene los datos de un usuario por su ID.
+     */
+    public function obtenerPorId(int $id): ?array {
+        $consulta = $this->conexion->prepare(
+            'SELECT id_usuario, nombre, apellido, correo, rol, estado, fecha_creacion
+             FROM usuarios WHERE id_usuario = :id LIMIT 1'
+        );
+        $consulta->execute(['id' => $id]);
+        $usuario = $consulta->fetch();
 
-	public function crear(
-		string $nombre,
-		string $apellido,
-		string $correo,
-		string $password,
-		string $rol = 'usuario',
-		int $estado = 1
-	): int {
-		$consulta = $this->conexion->prepare(
-			'INSERT INTO usuarios (nombre, apellido, correo, password, rol, estado)
-			 VALUES (:nombre, :apellido, :correo, :password, :rol, :estado)'
-		);
-		$consulta->execute([
-			'nombre' => trim($nombre),
-			'apellido' => trim($apellido),
-			'correo' => strtolower(trim($correo)),
-			'password' => password_hash($password, PASSWORD_DEFAULT),
-			'rol' => $rol,
-			'estado' => $estado,
-		]);
+        return $usuario ?: null;
+    }
 
-		return (int) $this->conexion->lastInsertId();
-	}
+    /**
+     * Obtiene los datos de un usuario por su correo electrónico.
+     */
+    public function obtenerPorCorreo(string $correo): ?array {
+        $consulta = $this->conexion->prepare(
+            'SELECT * FROM usuarios WHERE correo = :correo LIMIT 1'
+        );
+        $consulta->execute(['correo' => strtolower(trim($correo))]);
+        $usuario = $consulta->fetch();
 
-	public function actualizar(int $id, array $datos): bool
-	{
-		$permitidos = ['nombre', 'apellido', 'correo', 'rol', 'estado'];
-		$campos = array_intersect_key($datos, array_flip($permitidos));
+        return $usuario ?: null;
+    }
 
-		if (isset($campos['correo'])) {
-			$campos['correo'] = strtolower(trim((string) $campos['correo']));
-		}
+    /**
+     * Crea un nuevo usuario en la base de datos con contraseña hasheada.
+     */
+    public function crear(
+        string $nombre,
+        string $apellido,
+        string $correo,
+        string $password,
+        string $rol = 'usuario',
+        int $estado = 1
+    ): int {
+        $consulta = $this->conexion->prepare(
+            'INSERT INTO usuarios (nombre, apellido, correo, password, rol, estado)
+             VALUES (:nombre, :apellido, :correo, :password, :rol, :estado)'
+        );
+        $consulta->execute([
+            'nombre'   => trim($nombre),
+            'apellido' => trim($apellido),
+            'correo'   => strtolower(trim($correo)),
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'rol'      => $rol,
+            'estado'   => $estado,
+        ]);
 
-		if (isset($datos['password']) && $datos['password'] !== '') {
-			$campos['password'] = password_hash($datos['password'], PASSWORD_DEFAULT);
-		}
+        return (int) $this->conexion->lastInsertId();
+    }
 
-		if ($campos === []) {
-			return false;
-		}
+    /**
+     * Actualiza los datos permitidos de un usuario.
+     */
+    public function actualizar(int $id, array $datos): bool {
+        $permitidos = ['nombre', 'apellido', 'correo', 'rol', 'estado'];
+        $campos = array_intersect_key($datos, array_flip($permitidos));
 
-		$asignaciones = array_map(
-			static fn(string $campo): string => "$campo = :$campo",
-			array_keys($campos)
-		);
-		$campos['id'] = $id;
-		$consulta = $this->conexion->prepare(
-			'UPDATE usuarios SET ' . implode(', ', $asignaciones) .
-			' WHERE id_usuario = :id'
-		);
+        if (isset($campos['correo'])) {
+            $campos['correo'] = strtolower(trim((string) $campos['correo']));
+        }
 
-		return $consulta->execute($campos);
-	}
+        if (isset($datos['password']) && $datos['password'] !== '') {
+            $campos['password'] = password_hash($datos['password'], PASSWORD_DEFAULT);
+        }
 
-	public function eliminar(int $id): bool
-	{
-		$consulta = $this->conexion->prepare(
-			'DELETE FROM usuarios WHERE id_usuario = :id'
-		);
+        if ($campos === []) {
+            return false;
+        }
 
-		return $consulta->execute(['id' => $id]);
-	}
+        $asignaciones = array_map(
+            static fn(string $campo): string => "$campo = :$campo",
+            array_keys($campos)
+        );
+        $campos['id'] = $id;
+
+        $consulta = $this->conexion->prepare(
+            'UPDATE usuarios SET ' . implode(', ', $asignaciones) .
+            ' WHERE id_usuario = :id'
+        );
+
+        return $consulta->execute($campos);
+    }
+
+    /**
+     * Elimina físicamente un usuario por su ID.
+     */
+    public function eliminar(int $id): bool {
+        $consulta = $this->conexion->prepare(
+            'DELETE FROM usuarios WHERE id_usuario = :id'
+        );
+
+        return $consulta->execute(['id' => $id]);
+    }
 }

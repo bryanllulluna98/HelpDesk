@@ -41,12 +41,12 @@ CREATE TABLE `usuarios` (
 -- Se deja el valor comentado para pruebas iniciales.
 -- --------------------------------------------------------------------
 INSERT INTO `usuarios` (`id_usuario`, `nombre`, `apellido`, `correo`, `password`, `rol`, `estado`, `fecha_creacion`) VALUES
--- Administrador: pass = admin123 (Hash bcrypt)
-(1, 'Bryan', 'Steven', 'admin@tecnostar.com', '$2y$10$wT8Ksqx52P42s78.14V7dOqN1D/B5vEszqA20r69uLvh/i0Fq7X56', 'admin', 1, NOW()),
--- Técnico de soporte: pass = soporte123 (Hash bcrypt)
-(2, 'Carlos', 'Mendoza', 'soporte@tecnostar.com', '$2y$10$zS5rXkpvbF2s1A1p0i8K.u5X7l4M.oGZ6xSjE1k9M1k0a5B3C4D5e', 'tecnico', 1, NOW()),
--- Usuario final: pass = usuario123 (Hash bcrypt)
-(3, 'Ana', 'Gómez', 'usuario@tecnostar.com', '$2y$10$1A2b3C4d5E6f7G8h9I0j.u5X7l4M.oGZ6xSjE1k9M1k0a5B3C4D5e', 'usuario', 1, NOW());
+-- Administrador: pass = admin123 (Hash bcrypt verificado)
+(1, 'Bryan', 'Steven', 'admin@tecnostar.com', '$2y$12$tkvfELwM271s8Q7j6HicE.SYWZGMw6u9K48uJRnpadaG5lgn38vuK', 'admin', 1, NOW()),
+-- Técnico de soporte: pass = soporte123 (Hash bcrypt verificado)
+(2, 'Carlos', 'Mendoza', 'soporte@tecnostar.com', '$2y$12$xkCIXViMmrQbyX0DjoTl1er9R43F0CiuiIGSAY5FOrck/rxRC0u5m', 'tecnico', 1, NOW()),
+-- Usuario final: pass = usuario123 (Hash bcrypt verificado)
+(3, 'Ana', 'Gómez', 'usuario@tecnostar.com', '$2y$12$js56L7w2UTc9KgQthNCXduvZQ2UYqM3tjWXaBMuexACbQFBiSb9Ti', 'usuario', 1, NOW());
 
 -- NOTA TEMPORAL PARA MIGRACIÓN:
 -- Si estás probando la función legacy login() que aún compara texto plano directamente:

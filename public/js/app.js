@@ -180,7 +180,7 @@ $(document).ready(function(){
     ========================================================================== */
 
 	$(window).resize(function(){
-		$('body').click('click');
+		$('body').trigger('click');
 	});
 
 	// Collapse box
