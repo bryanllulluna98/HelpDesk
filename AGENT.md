@@ -8,8 +8,37 @@ Este archivo contiene el contexto del proyecto, directrices arquitectónicas, es
 
 - **Proyecto:** `PERSONAL_HelpDesk` (Sistema de Gestión de Tickets y Mesa de Ayuda).
 - **Propietario:** Bryan Steven.
-- **Propósito Educativo:** Este proyecto es la plataforma práctica para el crecimiento profesional de Bryan hacia un nivel **Semi-Senior / Senior** en ingeniería de software (Backend y Full-Stack en PHP/MySQL).
-- **Regla de Oro para la IA:** No generes soluciones rápidas, parches temporales o código desordenado estilo tutorial antiguo. Explica las decisiones arquitectónicas, promueve las mejores prácticas de la industria y guía al desarrollador en el "por qué" y no solo en el "cómo".
+- **Propósito Educativo:** Este proyecto es la plataforma práctica para el crecimiento profesional de Bryan hacia un nivel **Semi-Senior / Senior** en ingeniería de software (Backend y Full-Stack en PHP/MySQL), siguiendo y superando los objetivos pedagógicos de su curso de formación.
+- **Regla de Oro para la IA:** No generes soluciones rápidas, parches temporales o código desordenado estilo tutorial antiguo. Integra todos los temas del curso (incluyendo Stored Procedures, librerías JS, Composer y APIs) elevándolos a estándares profesionales de la industria (seguridad, PSR-12, tipado en PHP 8, arquitectura limpia).
+
+---
+
+## 🎓 Alineación Curricular con el Curso del Estudiante
+
+El desarrollo de este sistema debe cubrir paso a paso los módulos del curso que Bryan está siguiendo:
+1. **Base de Datos y Procedimientos Almacenados (Stored Procedures):**
+   - Uso de SPs en MySQL (`sp_l_categoria`, `sp_i_ticket`, `sp_l_ticket_usu`, `sp_l_ticket`, etc.) invocados desde PDO mediante consultas preparadas (`CALL sp_...(?, ?)`).
+2. **Autenticación y CRUD Completo de Usuarios:**
+   - Registro, login, roles (`admin`, `tecnico`, `usuario`), estados y gestión de perfiles.
+3. **Módulo de Tickets y Summernote JS:**
+   - Creación, seguimiento, estados (*Abierto*, *En Proceso*, *En Espera*, *Cerrado*).
+   - Inclusión de **archivos adjuntos** (`ticket_archivos`) en los tickets.
+4. **DataTables Interactivo:**
+   - Bandeja de tickets con búsqueda en tiempo real, filtros por estado y paginación AJAX.
+5. **Notificaciones por Correo Electrónico con Composer y PHPMailer:**
+   - Envío de alertas automatizadas a clientes y técnicos tras creación, asignación o cambio de estado.
+6. **Recuperación de Contraseña con OpenSSL:**
+   - Generación y validación de tokens de recuperación encriptados/desencriptados con OpenSSL vía enlace por email.
+7. **Visualización y Reportes con JavaScript:**
+   - Gráficos interactivos de rendimiento y métricas.
+   - Calendario de incidentes mediante **FullCalendar JS**.
+8. **Encuesta de Satisfacción de Atención:**
+   - Calificación de servicio (1 a 5 estrellas) al cerrar el ticket (`encuestas_satisfaccion`).
+9. **Integraciones Avanzadas (APIs y Terceros):**
+   - Envío de notificaciones por **WhatsApp API** al crear, asignar y cerrar tickets.
+   - Integración con **ChatGPT (OpenAI API)** para sugerir o generar respuestas inteligentes a incidencias.
+10. **Despliegue y Puesta en Marcha:**
+    - Preparación para hosting de producción (configuraciones `.env`, seguridad y subida).
 
 ---
 
@@ -30,6 +59,20 @@ Este archivo contiene el contexto del proyecto, directrices arquitectónicas, es
    - En [`public/js/app.js`](file:///c:/laragon/www/PERSONAL_HelpDesk/public/js/app.js) línea 183 se reemplazó la llamada inválida `$('body').click('click')` por `$('body').trigger('click')`, resolviendo el error `Uncaught TypeError: ... apply is not a function`.
 5. **Base de Datos Inicial:**
    - [`docs/database.sql`](file:///c:/laragon/www/PERSONAL_HelpDesk/docs/database.sql) con hashes bcrypt reales y verificados para los 3 perfiles demo.
+
+### ✅ Fase 2: Creación y Registro de Tickets (COMPLETADA Y FUNCIONAL)
+1. **Modelos de Negocio:**
+   - [`model/Categorias.php`](file:///c:/laragon/www/PERSONAL_HelpDesk/model/Categorias.php): Lista categorías activas (`listarActivas`) para poblar selectores.
+   - [`model/Tickets.php`](file:///c:/laragon/www/PERSONAL_HelpDesk/model/Tickets.php): Métodos para creación de tickets (`insertar`), detalle (`obtenerPorId`), listados (`listarPorUsuario`, `listarTodos`) y conteo para dashboard (`contarPorEstado`).
+2. **Controlador:**
+   - [`controller/ticket.php`](file:///c:/laragon/www/PERSONAL_HelpDesk/controller/ticket.php): Valida sesión obligatoria, procesa inserciones (`op=insertar`) con validación de campos obligatorios y soporte dual (POST estándar y AJAX).
+3. **Modularización de Vistas (DRY):**
+   - Vistas maestras reutilizables en [`view/includes/`](file:///c:/laragon/www/PERSONAL_HelpDesk/view/includes/): `head.php`, `header.php`, `nav.php`, `scripts.php` y `seguridad.php`.
+4. **Vista de Nuevo Ticket:**
+   - [`view/NuevoTicket/N_ticket.php`](file:///c:/laragon/www/PERSONAL_HelpDesk/view/NuevoTicket/N_ticket.php): Formulario completo con solicitante, categorías dinámicas, selector de prioridad, título y editor enriquecido Summernote.
+   - [`view/NuevoTicket/N_ticket.js`](file:///c:/laragon/www/PERSONAL_HelpDesk/view/NuevoTicket/N_ticket.js): Inicialización de Summernote y validación de campos antes de envío con alertas visuales (SweetAlert).
+5. **Dashboard Conectado a Datos Reales:**
+   - [`view/home/home.php`](file:///c:/laragon/www/PERSONAL_HelpDesk/view/home/home.php): Tarjetas estadísticas que muestran el conteo real de tickets abiertos, en proceso y cerrados desde MySQL.
 
 ---
 
@@ -99,12 +142,12 @@ El proyecto sigue una arquitectura **MVC (Modelo-Vista-Controlador)**:
 
 ## 🎯 Próximo Paso Inmediato para la IA
 
-### Fase 2: Módulo de Gestión y Creación de Tickets
-1. **Modelo de Categorías (`model/Categorias.php`):**
-   - Método `listar()` para poblar los selectores de categorías (Hardware, Software, Redes, Accesos).
-2. **Modelo de Tickets (`model/Tickets.php`):**
-   - Método `crearTicket(int $idUsuario, int $idCategoria, string $titulo, string $descripcion, string $prioridad): int`.
-3. **Controlador de Tickets (`controller/ticket.php`):**
-   - Manejar la acción `?op=insertar` para recibir el formulario de nuevo ticket, validar entradas y redireccionar.
-4. **Vista de Nuevo Ticket (`view/NuevoTicket/N_ticket.php`):**
-   - Integrar formulario con selector de categoría, prioridad, título y editor enriquecido (Summernote).
+### Fase 3: Bandeja de Consulta y Seguimiento de Tickets
+1. **Controlador de Listado (`controller/ticket.php`):**
+   - Acción `?op=listar_usuario`: Retornar JSON formateado para DataTables con los tickets del usuario logueado.
+   - Acción `?op=listar_todos`: Retornar JSON con todos los tickets para administradores y soporte técnico.
+2. **Vista de Consulta (`view/ConsultarTicket/` o `view/MisTickets/`):**
+   - Tabla interactiva con DataTables (búsqueda en tiempo real, ordenamiento por fecha, badges de estado con colores).
+   - Acciones por ticket: Ver detalle / Historial de comentarios.
+3. **Módulo de Detalle de Ticket (`view/DetalleTicket/`):**
+   - Visualización de datos del ticket, estado actual, y formulario para agregar respuestas/comentarios (`ticket_detalles`).

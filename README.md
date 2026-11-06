@@ -6,8 +6,8 @@ Sistema web de gestión de incidencias, tickets de soporte técnico y control de
 
 ## 📌 Estado del Proyecto
 
-- **Fase Actual:** `Fase 1 - Autenticación, Seguridad y Arquitectura Base (COMPLETADA Y VERIFICADA)`.
-- **Próximo Objetivo:** `Fase 2 - Módulo de Creación y Gestión de Tickets`.
+- **Fase Actual:** `Fase 2 - Creación y Registro de Tickets (COMPLETADA Y FUNCIONAL)`.
+- **Próximo Objetivo:** `Fase 3 - Bandeja de Consulta, DataTables y Detalle de Tickets`.
 - **Servidor recomendado:** [Laragon](https://laragon.org/) (Apache + MySQL/MariaDB + PHP 8.x).
 
 ---
@@ -118,27 +118,38 @@ PERSONAL_HelpDesk/
 ├── config/                # Configuraciones globales y conexión a Base de Datos
 │   └── conexion.php       # Conexión persistente PDO (utf8mb4, excepciones y ruta base)
 ├── controller/            # Controladores del sistema (MVC)
-│   └── usuario.php        # Controlador de autenticación (login, logout, sesiones)
+│   ├── usuario.php        # Controlador de autenticación (login, logout, sesiones)
+│   └── ticket.php         # Controlador de tickets (inserción, combos y listados)
 ├── docs/                  # Scripts SQL y documentación técnica
-│   └── database.sql       # Script de creación y datos iniciales verificados
+│   └── database.sql       # Script de creación de tablas y datos iniciales
 ├── model/                 # Modelos de datos desacoplados de HTTP
-│   └── Usuarios.php       # Consultas preparadas, password_verify y password_hash
+│   ├── Usuarios.php       # Consultas preparadas, password_verify y password_hash
+│   ├── Categorias.php     # Consulta de categorías activas
+│   └── Tickets.php        # CRUD de tickets y conteo de estados para dashboard
 ├── public/                # Archivos estáticos públicos (CSS, JS, imágenes, fuentes)
-│   ├── css/
+│   ├── css/               # Hojas de estilo (Clean UI, Summernote, SweetAlert)
 │   ├── js/                # Librerías (jQuery, Bootstrap, plugins) y app.js corregido
 │   └── img/
 └── view/                  # Vistas del sistema
-    ├── includes/          # Componentes reutilizables
+    ├── includes/          # Componentes reutilizables maestros
+    │   ├── head.php       # Metas, títulos y llamadas CSS
+    │   ├── header.php     # Barra superior con perfil y menú de usuario
+    │   ├── nav.php        # Menú lateral dinámico con indicador de página activa
+    │   ├── scripts.php    # Scripts base JS
     │   └── seguridad.php  # Middleware de protección de rutas privadas
-    ├── home/              # Panel principal protegido con perfil dinámico
+    ├── home/              # Panel principal protegido con métricas en tiempo real
     │   └── home.php
-    ├── NuevoTicket/       # Formulario y vista de nuevo ticket
+    ├── NuevoTicket/       # Formulario y vista de creación de ticket
+    │   ├── N_ticket.php   # Formulario con editor Summernote
+    │   └── N_ticket.js    # Lógica frontend y validación con SweetAlert
     └── NuevoRegistro/     # Registro de nuevos usuarios
 ```
 
 ---
 
-## 🗺️ Hoja de Ruta y Futuras Mejoras (Roadmap)
+## 🗺️ Hoja de Ruta y Futuras Mejoras (Roadmap del Curso y Proyecto)
+
+Este plan de desarrollo cubre integralmente el temario práctico del curso, elevando cada entrega a estándares profesionales de ingeniería de software:
 
 ### 🎯 Fase 1: Consolidación de Autenticación y Seguridad *(COMPLETADA)*
 - [x] Maquetación de la pantalla de Login con plantilla responsiva.
@@ -150,31 +161,48 @@ PERSONAL_HelpDesk/
 - [x] Corrección del bug de eventos jQuery en la plantilla administrativa (`public/js/app.js`).
 - [x] Mensajes y alertas de feedback dinámicas en la vista de login.
 
-### 🎯 Fase 2: Creación y Gestión de Tickets *(PRÓXIMA FASE)*
-- [ ] Modelo de Categorías (`model/Categorias.php`) con listado dinámico.
-- [ ] Formulario de creación de ticket en `view/NuevoTicket/N_ticket.php` con editor Summernote.
-- [ ] Controlador de tickets (`controller/ticket.php?op=insertar`) con validación y sanitización.
-- [ ] Asignación de prioridad (Baja, Media, Alta, Urgente) y asociación al usuario en sesión.
+### 🎯 Fase 2: Creación y Gestión de Tickets *(COMPLETADA)*
+- [x] Modelo de Categorías (`model/Categorias.php`) con listado dinámico.
+- [x] Modelo de Tickets (`model/Tickets.php`) con inserción, consulta y conteo para dashboard.
+- [x] Controlador de tickets (`controller/ticket.php?op=insertar`) con validación obligatoria.
+- [x] Componentes de interfaz reutilizables (`view/includes/`: `head.php`, `header.php`, `nav.php`, `scripts.php`).
+- [x] Formulario de creación de ticket en `view/NuevoTicket/N_ticket.php` con editor Summernote.
+- [x] Validación previa al envío con SweetAlert en `view/NuevoTicket/N_ticket.js`.
+- [x] Conexión de contadores del Dashboard (`view/home/home.php`) a la base de datos real.
 
-### 🎯 Fase 3: Bandeja de Tickets y Estados
-- [ ] Bandeja interactiva con DataTables (búsqueda, ordenamiento y paginación AJAX).
-- [ ] Filtrado por estado (*Abierto*, *En Proceso*, *En Espera*, *Cerrado*).
-- [ ] Vista detallada del ticket con historial de cambios.
+### 🎯 Fase 3: Stored Procedures y Bandeja con DataTables *(PRÓXIMA FASE)*
+- [ ] Creación e invocación de Procedimientos Almacenados en MySQL (`sp_l_ticket_usu`, `sp_l_ticket`, `sp_l_categoria`).
+- [ ] Bandeja interactiva "Mis Tickets" con DataTables (búsqueda, ordenamiento y paginación AJAX).
+- [ ] Badges y etiquetas visuales con colores según el estado (*Abierto*, *En Proceso*, *En Espera*, *Cerrado*).
 
-### 🎯 Fase 4: Comentarios, Trazabilidad y Adjuntos
-- [ ] Hilo de respuestas e interacción entre usuario solicitante y técnico.
-- [ ] Carga segura de archivos adjuntos (imágenes, documentos, logs).
-- [ ] Notificaciones por correo electrónico mediante **PHPMailer**.
+### 🎯 Fase 4: Adjuntos en Tickets y Seguimiento de Conversación
+- [ ] Hilo de respuestas / comentarios bidireccional entre usuario y técnico (`ticket_detalles`).
+- [ ] Carga y descarga segura de archivos adjuntos (imágenes, PDFs, capturas) en tickets (`ticket_archivos`).
 
-### 🎯 Fase 5: Dashboard Estadístico y Métricas
-- [ ] Tarjetas con contadores en tiempo real (Abiertos, En Proceso, Cerrados).
-- [ ] Gráficos interactivos de rendimiento por categoría y técnico.
-- [ ] Exportación de reportes a PDF y Excel.
+### 🎯 Fase 5: Composer, PHPMailer y Recuperación de Clave con OpenSSL
+- [ ] Configuración del gestor de dependencias **Composer**.
+- [ ] Alertas automáticas por correo electrónico con **PHPMailer** al crear, responder o cerrar tickets.
+- [ ] Módulo de recuperación de contraseña vía email con tokens cifrados mediante **OpenSSL**.
 
-### 🎯 Fase 6: Madurez de Ingeniería de Software
-- [ ] Implementación de **Composer** para carga automática de clases (PSR-4 Autoloading).
-- [ ] Migración de variables sensibles a un archivo `.env` (`vlucas/phpdotenv`).
-- [ ] Pruebas automatizadas con **PHPUnit** o **Pest**.
+### 🎯 Fase 6: Asignación de Tickets y CRUD Completo de Usuarios
+- [ ] Módulo de administración para asignar tickets a técnicos de soporte.
+- [ ] CRUD completo de usuarios (crear, listar, editar, cambiar rol y activar/inactivar).
+
+### 🎯 Fase 7: Dashboard Gráfico y Calendario de Incidentes
+- [ ] Gráficos interactivos con JavaScript para volumen de tickets y rendimiento por categoría.
+- [ ] Visualización de incidentes y fechas de cierre mediante **FullCalendar JS**.
+
+### 🎯 Fase 8: Encuesta de Satisfacción de Atención
+- [ ] Formulario de evaluación de calidad de servicio (calificación de 1 a 5 estrellas y comentarios) al cerrar un ticket.
+- [ ] Reporte de satisfacción del cliente.
+
+### 🎯 Fase 9: Notificaciones por WhatsApp y Respuestas con IA (ChatGPT)
+- [ ] Integración con API de WhatsApp para notificación automática al crear, asignar y cerrar tickets.
+- [ ] Integración con la API de OpenAI (ChatGPT) para sugerir respuestas inteligentes automáticas en tickets.
+
+### 🎯 Fase 10: Mockups del Sistema y Despliegue en Hosting de Producción
+- [ ] Documentación de Mockups y arquitectura final.
+- [ ] Preparación de variables de entorno (`.env`) y migración a hosting web de producción.
 
 ---
 
